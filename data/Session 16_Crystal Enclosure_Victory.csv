@@ -1,0 +1,5 @@
+Character,Enemies Killed,Damage Done,Damage Taken,Healing Done,Loot Collected,Chests Looted,Ability XP Earned,Items Used
+Trapper,2,13,20,5,5,1,9,1
+Snowdancer,2,25,11,16,2,0,7,3
+Drifter,6,52,25,9,1,0,10,3
+Deathwalker,8,43,20,9,2,0,7,10
