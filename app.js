@@ -2,6 +2,7 @@
 (function() {
     const resultContainer = '#result';
     const urlQueryKey = 'query';
+    const sessionStatsQueryName = 'sessionStats';
 
     globalThis.queries = {
         allSessions: 'SELECT * FROM session',
@@ -87,14 +88,7 @@
         return url.searchParams.get(urlQueryKey);
     }
 
-    function getQueryByUrl() {
-        const queryName = getQueryNameInUrl();
-        return globalThis.queries[queryName];
-    }
-
-    function runNamedQuery(queryName) {
-        const query = getQueryByUrl();
-        const sql = query + createOrderByClauseFromUrl();
+    function runQuery(sql) {
         const columnNames = [];
         const rows = [];
         globalThis.db.exec({
@@ -105,12 +99,25 @@
                 rows.push(row);
             }
         });
+        return {columnNames, rows};
+    }
+
+    function runNamedQuery(queryName) {
+        let sql;
+        if (queryName.startsWith(sessionStatsQueryName)) {
+            sql = `SELECT * FROM session_stats WHERE session_id = ` + queryName.split('_')[1];
+        } else {
+            sql = globalThis.queries[queryName];
+        }
+
+        sql = sql + createOrderByClauseFromUrl();
+        const result = runQuery(sql);
 
         const url = new URL(window.location);
         url.searchParams.set(urlQueryKey, queryName);
         history.pushState(null, '', url);
 
-        renderQueryResult(queryName, columnNames, rows);
+        renderQueryResult(queryName, result.columnNames, result.rows);
     }
 
     function renderQueryResult(queryName, columnNames, rows) {
@@ -146,17 +153,21 @@
             hyperlink.href = `?query=${queryName}`;
             nav.appendChild(hyperlink);
         });
+
+        const result = runQuery('SELECT id, scenario_name, win FROM session');
+        result.rows.forEach(row => {
+            const hyperlink = document.createElement('a');
+            const sessionId = row[0];
+            const scenario = row[1];
+            const outcome = row[2] == 1 ? 'Win' : 'Loss';
+            hyperlink.textContent = `${sessionId} ${scenario} ${outcome}`;
+            hyperlink.href = `?query=${sessionStatsQueryName}_${sessionId}`;
+            nav.appendChild(hyperlink);
+        });
     }
 
     const stathaven = function(sqlite3) {
         try {
-            // db.exec({
-            //     sql: queries.characterBasicStats,
-            //     rowMode: 'array',
-            //     callback: function(row) {
-            //         console.log('Row', ++this.counter, '=', row)
-            //     }.bind({counter: 0})
-            // });\
             renderNavMenu();
 
             const queryName = getQueryNameInUrl();
