@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en-us">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        html, body {
+            font-family: 'Open Sans', Robot, sans-serif;
+        }
+
+        th {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+        }
+        
+        td {
+            text-align: center;
+        }
+    </style>
+    <title>Stathaven</title>
+</head>
+<body>
+    <header>
+        <nav>
+            <a href="#sessions">Sessions</a>
+        </nav>
+    </header>
+
+    <main>
+        <section>
+            <div id="result"></div>
+        </section>
+    </main>
+
+    <script src="/sqlite3.js"></script>
+    <script>
+        'use strict';
+        (function() {
+            const resultContainer = '#result';
+            const urlQueryKey = 'query';
+
+            globalThis.queries = {
+                allSessions: 'SELECT * FROM session',
+                characterBasicStats:
+                    `SELECT
+                        c.nickname,
+                        c.player,
+                        COUNT(ss.session_id) AS sessions_played,
+                        -- Totals
+                        SUM(ss.enemies_killed) AS total_kills,
+                        SUM(ss.damage_done) AS total_dmg_done,
+                        SUM(ss.damage_taken) AS total_dmg_taken,
+                        SUM(ss.healing_done) AS total_healing,
+                        SUM(ss.loot_collected) AS total_loot,
+                        SUM(ss.chests_looted) AS total_chests,
+                        SUM(ss.ability_xp_earned) AS total_xp,
+                        SUM(ss.items_used) AS total_items,
+                        -- Averages (Rounded to 1 decimal)
+                        ROUND(AVG(ss.damage_done), 1) AS avg_dmg_done,
+                        ROUND(AVG(ss.ability_xp_earned), 1) AS avg_xp,
+                        -- Highest / Lowest (Example using damage_done)
+                        MAX(ss.damage_done) AS max_dmg_done,
+                        MIN(ss.damage_done) AS min_dmg_done
+                    FROM character c
+                    JOIN session_stats ss ON c.id = ss.character_id
+                    GROUP BY c.id`
+            };
+
+            globalThis.cycleSort = function(columnName) {
+                const url = new URL(window.location);
+                const value = url.searchParams.get(columnName);
+                switch (value) {
+                    case null:   url.searchParams.set(columnName, 'asc'); break;
+                    case 'asc':  url.searchParams.set(columnName, 'desc'); break;
+                    case 'desc': url.searchParams.delete(columnName); break;
+                }
+
+                history.pushState(null, '', url);
+                runNamedQuery(url.searchParams.get(urlQueryKey));
+            }
+
+            function runNamedQuery(queryName) {
+                const url = new URL(window.location);
+                const sorts = [];
+                url.searchParams.forEach((value, key, _) => {
+                    if (key !== urlQueryKey) {
+                        sorts.push({column: key, order: value});
+                    }
+                });
+                let orderByClause = sorts.map(s => `${s.column} ${s.order}`).join(', ');
+                if (orderByClause.length > 0) {
+                    orderByClause = ' ORDER BY ' + orderByClause;
+                }
+
+                const query = globalThis.queries[queryName];
+                const sql = query + orderByClause;
+                const columnNames = [];
+                const rows = [];
+                globalThis.db.exec({
+                    sql: sql,
+                    columnNames: columnNames,
+                    rowMode: 'array',
+                    callback: function(row) {
+                        rows.push(row);
+                    }
+                });
+
+                url.searchParams.set(urlQueryKey, queryName);
+                history.pushState(null, '', url);
+
+                renderQueryResult(queryName, columnNames, rows);
+            }
+
+            function renderQueryResult(queryName, columnNames, rows) {
+                const el = document.querySelector(resultContainer);
+                const table = document.createElement('table');
+
+                const thead = table.createTHead().insertRow();
+                columnNames.forEach(columnName => {
+                    const th = document.createElement('th');
+                    th.setAttribute('onclick', `cycleSort('${columnName}')`);
+                    th.textContent = columnName.replaceAll('_', ' ');
+                    thead.appendChild(th);
+                });
+
+                const tbody = table.createTBody();
+                rows.forEach(row => {
+                    const tr = tbody.insertRow();
+                    row.forEach(columnValue => {
+                        const td = tr.insertCell();
+                        td.textContent = columnValue;
+                    });
+                });
+                
+                el.replaceChildren(table);
+            }
+
+            const stathaven = function(sqlite3) {
+                try {
+                    // db.exec({
+                    //     sql: queries.characterBasicStats,
+                    //     rowMode: 'array',
+                    //     callback: function(row) {
+                    //         console.log('Row', ++this.counter, '=', row)
+                    //     }.bind({counter: 0})
+                    // });
+                    runNamedQuery('characterBasicStats');
+                } finally {
+                    // TODO: handle this properly
+                    // if (globalThis.db)
+                    //     globalThis.db.close();
+                }
+            };
+
+            const load = function(sqlite3) {
+                const dbUrl = '/stathaven.db';
+                fetch(dbUrl)
+                    .then(res => res.arrayBuffer())
+                    .then(function(arrayBuffer) {
+                        const mem = sqlite3.wasm.allocFromTypedArray(arrayBuffer);
+                        const db = new sqlite3.oo1.DB();
+                        const rc = sqlite3.capi.sqlite3_deserialize(
+                            db.pointer,
+                            'main',
+                            mem,
+                            arrayBuffer.byteLength,
+                            arrayBuffer.byteLength,
+                            // This is read-only, so if we ever need write capabilities, add: `| sqlite3.capi.SQLITE_DESERIALIZE_RESIZEABLE`
+                            sqlite3.capi.SQLITE_DESERIALIZE_FREEONCLOSE
+                        );
+                        db.checkRc(rc);
+                        if (db) {
+                            globalThis.db = db;
+                            stathaven(sqlite3);
+                        } else {
+                            throw new Error('Database failed to initialize');
+                        }
+                    })
+                    .catch(err => console.error('Unexpected error:', err));
+            };
+
+            window.sqlite3InitModule().then(function(sqlite3) {
+                try {
+                    load(sqlite3);
+                } catch (err) {
+                    console.error("Sqlite3 failed to load:", err.message);
+                }
+            });
+        })();
+    </script>
+</body>
+</html>
