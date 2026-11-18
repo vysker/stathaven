@@ -289,7 +289,7 @@
     };
 
     const load = function(sqlite3) {
-        const dbUrl = '/stathaven.db';
+        const dbUrl = `./stathaven.db?v=${Date.now()}`;
         fetch(dbUrl)
             .then(res => res.arrayBuffer())
             .then(function(arrayBuffer) {
