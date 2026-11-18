@@ -1,5 +1,5 @@
 Character,Enemies Killed,Damage Done,Damage Taken,Healing Done,Loot Collected,Chests Looted,Ability XP Earned,Items Used
-T Pain,8,80,63,48,0,3,14,14
-Pincer,2,29,62,31,1,1,12,7
+T Pain,8,80,63,48,0,0,14,14
+Pincer,2,29,62,31,1,0,12,7
 Metabee,3,46,51,11,0,0,17,3
-Johnny Blaze,2,6,24,2,1,5,5,4
+Johnny Blaze,2,6,24,2,1,0,5,4
