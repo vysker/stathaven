@@ -5,11 +5,22 @@
     const sessionStatsQueryName = 'sessionStats';
 
     globalThis.queries = {
-        allSessions: 'SELECT * FROM session',
+        sessionStats:
+            `SELECT
+                CONCAT(ch.name, ' (', ch.nickname, ')') AS character,
+                ss.enemies_killed,
+                ss.damage_done,
+                ss.damage_taken,
+                ss.healing_done,
+                ss.loot_collected,
+                ss.chests_looted,
+                ss.ability_xp_earned,
+                ss.items_used
+            FROM session_stats ss
+            JOIN character ch ON ch.id = ss.character_id`,
         characterBasicStats:
             `SELECT
-                c.nickname,
-                c.player,
+                CONCAT(c.name, ' (', c.nickname, ')') AS character,
                 COUNT(ss.session_id) AS sessions_played,
                 -- Totals
                 SUM(ss.enemies_killed) AS total_kills,
@@ -83,6 +94,32 @@
         runNamedQuery(getQueryNameInUrl());
     }
 
+    function getSessionIdFromQueryName(queryName) {
+        return parseInt(queryName.split('_')[1]);
+    }
+
+    globalThis.nextSession = function() {
+        const queryName = getQueryNameInUrl();
+        const sessionCount = runQuery('SELECT count(id) FROM session').rows[0][0];
+        let sessionId = getSessionIdFromQueryName(queryName);
+        sessionId++;
+        if (sessionId >= sessionCount) {
+            sessionId = 1;
+        }
+        runNamedQuery(sessionStatsQueryName + '_' + sessionId);
+    }
+
+    globalThis.prevSession = function() {
+        const queryName = getQueryNameInUrl();
+        const sessionCount = runQuery('SELECT count(id) FROM session').rows[0][0];
+        let sessionId = getSessionIdFromQueryName(queryName);
+        sessionId--;
+        if (sessionId <= 0) {
+            sessionId = sessionCount;
+        }
+        runNamedQuery(sessionStatsQueryName + '_' + sessionId);
+    }
+
     function getQueryNameInUrl() {
         const url = new URL(window.location);
         return url.searchParams.get(urlQueryKey);
@@ -105,7 +142,9 @@
     function runNamedQuery(queryName) {
         let sql;
         if (queryName.startsWith(sessionStatsQueryName)) {
-            sql = `SELECT * FROM session_stats WHERE session_id = ` + queryName.split('_')[1];
+            const sessionId = getSessionIdFromQueryName(queryName);
+            const whereClause = ' WHERE session_id = ' + sessionId;
+            sql = globalThis.queries[sessionStatsQueryName] + whereClause;
         } else {
             sql = globalThis.queries[queryName];
         }
@@ -134,35 +173,73 @@
         });
 
         const tbody = table.createTBody();
+        const columnBests = [];
+        for (let col = 0; col < columnNames.length; col++) {
+            const columnValues = rows.map(row => row[col]);
+            const best = columnValues.reduce((prev, cur, idx, arr) => cur > prev ? cur : prev);
+            columnBests.push(best);
+        }
+
         rows.forEach(row => {
             const tr = tbody.insertRow();
+            var col = 0;
             row.forEach(columnValue => {
                 const td = tr.insertCell();
-                td.textContent = columnValue;
+                const span = document.createElement('span');
+                span.textContent = columnValue;
+
+                if (typeof(columnValue) == "number" && columnValue == columnBests[col]) {
+                    span.classList.add('best');
+                }
+
+                td.appendChild(span);
+                col++;
             });
         });
         
         container.replaceChildren(table);
+
+        if (queryName.startsWith(sessionStatsQueryName)) {
+            document.querySelector('.session-cycle-buttons').classList.add('show');
+        } else {
+            document.querySelector('.session-cycle-buttons').classList.delete('show');
+        }
     }
 
     function renderNavMenu() {
-        const nav = document.querySelector('header nav');
+        const namedQueriesNav = document.querySelector('nav#named-queries');
         Object.keys(globalThis.queries).forEach(queryName => {
+            if (queryName.startsWith(sessionStatsQueryName))
+                return;
             const hyperlink = document.createElement('a');
             hyperlink.textContent = queryName;
             hyperlink.href = `?query=${queryName}`;
-            nav.appendChild(hyperlink);
+            namedQueriesNav.appendChild(hyperlink);
         });
 
+        const sessionListNav = document.querySelector('nav#session-list');
         const result = runQuery('SELECT id, scenario_name, win FROM session');
         result.rows.forEach(row => {
             const hyperlink = document.createElement('a');
+            const sessionIdNode = document.createElement('span');
+            const scenarioNode = document.createElement('span');
+            const outcomeNode = document.createElement('span');
             const sessionId = row[0];
             const scenario = row[1];
+            const win = row[2];
             const outcome = row[2] == 1 ? 'Win' : 'Loss';
-            hyperlink.textContent = `${sessionId} ${scenario} ${outcome}`;
+            sessionIdNode.classList.add('session');
+            sessionIdNode.textContent = sessionId;
+            scenarioNode.classList.add('scenario');
+            scenarioNode.textContent = scenario;
+            outcomeNode.classList.add('outcome');
+            if (win) outcomeNode.classList.add('win');
+            outcomeNode.textContent = outcome;
+            hyperlink.appendChild(sessionIdNode);
+            hyperlink.appendChild(scenarioNode);
+            hyperlink.appendChild(outcomeNode);
             hyperlink.href = `?query=${sessionStatsQueryName}_${sessionId}`;
-            nav.appendChild(hyperlink);
+            sessionListNav.appendChild(hyperlink);
         });
     }
 

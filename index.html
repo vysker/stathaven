@@ -6,6 +6,7 @@
     <style>
         * {
             box-sizing: border-box;
+            --session-list-item-border-radius: 4px;
         }
 
         html, body {
@@ -21,23 +22,98 @@
             text-align: center;
         }
 
+        td span.best {
+            background: gold;
+        }
+
         th.sort-asc::after {
             content: '\25B2'; /* \2191 */
         }
         th.sort-desc::after {
             content: '\25BC'; /* \2193 */
         }
+
+        nav a {
+            text-decoration: none;
+        }
+
+        nav#session-list {
+            /* column-count: 3; */
+            /* row-gap: 4px; */
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        nav#session-list a {
+            display: flex;
+            gap: 1rem;
+            width: 250px;
+            /* padding: 0.2rem 0.5rem; */
+            background: #11354b;
+            color: white;
+            /* font-weight: bold; */
+            font-size: 0.9rem;
+            height: 1.5rem;
+            border-radius: var(--session-list-item-border-radius);
+        }
+        
+        nav#session-list a span {
+            display: flex;
+            align-items: center;
+            height: 100%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            text-wrap: nowrap;
+            border-radius: var(--session-list-item-border-radius);
+        }
+        
+        nav#session-list a span.session {
+            width: 2rem;
+            justify-content: center;
+            background: gold;
+            color: black;
+        }
+
+        nav#session-list a span.scenario {
+            flex-grow: 1;
+        }
+        
+        nav#session-list a span.outcome {
+            width: 3rem;
+            justify-content: center;
+            align-self: flex-end;
+            background: red;
+        }
+        nav#session-list a span.outcome.win {
+            background: blue;
+        }
+
+        .session-cycle-buttons {
+            display: none;
+        }
+        .session-cycle-buttons.show {
+            display: block;
+        }
     </style>
     <title>Stathaven</title>
 </head>
 <body>
     <header>
-        <nav></nav>
+        <nav id="named-queries"></nav>
+        <details>
+            <summary>Session Stats</summary>
+            <nav id="session-list"></nav>
+        </details>
         <button onclick="clearSorts()">Clear Sorts</button>
     </header>
 
     <main>
         <section>
+            <div class="session-cycle-buttons">
+                <button onclick="nextSession()">Next Session</button>
+                <button onclick="prevSession()">Previous Session</button>
+            </div>
             <div id="result"></div>
         </section>
     </main>
