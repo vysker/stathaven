@@ -1,42 +1,17 @@
 # Stathaven
 
-## Character stats
+A simple web app to present Frosthaven scenario stats of my group's playthrough.
 
-- Number of sessions
-- Overlap with other characters
-- Totals, i.e. total damage done, total ability xp earned
-- Averages
-- Medians
-- Percentiles
-- Highest/lowest, i.e. highest damage done
-- Highest sum of all stats (columns)
-- Highest total sum of all stats (columns)
+## Tech
 
-Somehow incorporate levels. Let's see how we can do this:
-- We know we started at level 1 in scenario 1
-- We can look up the scenario XP
-- We know the ability XP earned
-- When a new character is introduced (retirement), we know the calculation for its starting level
-- Take base level
-- Look up XP earned by scenario
-- Add ability xp earned
+This web app is powered by plain `html`, `js` and `sqlite3 wasm js`.
 
-level, xp min
-1, 0
-2, 45
-3, 95
-4, 150
-5, 210
-6, 275
-7, 345
-8, 420
-9, 500
+The sqlite3 database is fetched when the app starts, so all data is located in-memory on the client side. This makes it possible to support dynamic queries, including sorting, without a backend.
 
-## Session stats
+The philosophy here is to have as little moving parts as possible, so the app can be hosted anywhere and doesn't require any complex build processes or dependency management.
 
-- Best/worst performer
-- Worst character when scenario resulted in defeat
+## Data
 
-## Player stats
+The data is based on the scenario stats screen you see when you finish a scenario in the digital version of Frosthaven.
 
-Basically the character stats, but grouped by player instead
+This data is entered manually and added as a `.csv` file to `data/`. By running `ingest.py`, the data is included in the `stathaven.db`, which is the sqlite3 database. Characters have to be edited manually in `characters.sql`.
