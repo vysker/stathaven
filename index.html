@@ -2,121 +2,481 @@
 <html lang="en-us">
 <head>
     <meta charset="utf-8">
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stathaven — Frosthaven Stats</title>
     <style>
+        :root {
+            --bg-abyss: #080f18;
+            --bg-slate: #101d2c;
+            --bg-panel: #152538;
+            --bg-panel-hover: #1d324b;
+            --border-ice: #2c4a6b;
+            --border-gold: #c89d46;
+            --text-parchment: #ece4d0;
+            --text-muted: #8fa6be;
+            --accent-frost: #62b6cb;
+            --accent-gold: #e5b84b;
+            --win-bg: #1b4965;
+            --win-text: #7be0ff;
+            --loss-bg: #4a1922;
+            --loss-text: #ff8fa3;
+            --radius: 6px;
+        }
+
         * {
             box-sizing: border-box;
-            --session-list-item-border-radius: 4px;
+            margin: 0;
+            padding: 0;
         }
 
-        html, body {
-            font-family: 'Open Sans', Robot, sans-serif;
+        body {
+            font-family: 'Open Sans', 'Roboto', sans-serif;
+            background-color: var(--bg-abyss);
+            background-image: 
+                radial-gradient(circle at 15% 15%, rgba(44, 74, 107, 0.25) 0%, transparent 45%),
+                radial-gradient(circle at 85% 80%, rgba(27, 73, 101, 0.2) 0%, transparent 50%);
+            color: var(--text-parchment);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
         }
 
-        th {
-            font-size: 0.7rem;
+        .top-banner {
+            background: linear-gradient(180deg, #132234 0%, #0b1420 100%);
+            border-bottom: 2px solid var(--border-ice);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
+            padding: 1rem 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: relative;
+        }
+
+        .top-banner::after {
+            content: '';
+            position: absolute;
+            bottom: -4px;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--border-gold), transparent);
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .brand-icon {
+            width: 32px;
+            height: 32px;
+            fill: var(--accent-frost);
+            filter: drop-shadow(0 0 6px rgba(98, 182, 203, 0.4));
+        }
+
+        .brand h1 {
+            font-family: 'Georgia', serif;
+            font-size: 1.75rem;
+            font-weight: 800;
+            letter-spacing: 0.12em;
             text-transform: uppercase;
-        }
-        
-        td {
-            text-align: center;
-        }
-
-        td span.best {
-            background: gold;
+            background: linear-gradient(180deg, #ffffff 10%, #a8c6df 90%);
+            background-clip: text;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
         }
 
-        th.sort-asc::after {
-            content: '\25B2'; /* \2191 */
-        }
-        th.sort-desc::after {
-            content: '\25BC'; /* \2193 */
+        .brand span {
+            font-family: 'Georgia', serif;
+            font-size: 0.85rem;
+            color: var(--accent-gold);
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            border-left: 1px solid var(--border-ice);
+            padding-left: 0.75rem;
         }
 
-        nav a {
+        /* Layout Wrapper */
+        .app-layout {
+            display: grid;
+            grid-template-columns: 290px 1fr;
+            flex: 1;
+        }
+
+        /* Sidebar Navigation */
+        aside.sidebar {
+            background: var(--bg-slate);
+            border-right: 1px solid var(--border-ice);
+            padding: 1.5rem 1.25rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .nav-section-title {
+            font-family: 'Cinzel', serif;
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: var(--accent-gold);
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            margin-bottom: 0.75rem;
+            padding-bottom: 0.35rem;
+            border-bottom: 1px solid rgba(200, 157, 70, 0.3);
+        }
+
+        nav#named-queries {
+            display: flex;
+            flex-direction: column;
+            gap: 0.4rem;
+        }
+
+        nav#named-queries a {
+            display: block;
+            padding: 0.6rem 0.85rem;
+            background: var(--bg-panel);
+            border: 1px solid var(--border-ice);
+            border-radius: var(--radius);
+            color: var(--text-parchment);
             text-decoration: none;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: all 0.15s ease;
+        }
+
+        nav#named-queries a:hover,
+        nav#named-queries a.active {
+            background: var(--bg-panel-hover);
+            border-color: var(--accent-frost);
+            box-shadow: inset 3px 0 0 var(--accent-frost);
+            color: #fff;
+        }
+
+        /* Session Chronicles Accordion */
+        details.session-accordion summary {
+            font-family: 'Cinzel', serif;
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: var(--accent-gold);
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            cursor: pointer;
+            padding-bottom: 0.35rem;
+            border-bottom: 1px solid rgba(200, 157, 70, 0.3);
+            margin-bottom: 0.75rem;
+            list-style: none;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        details.session-accordion summary::after {
+            content: '▾';
+            font-size: 1rem;
+            transition: transform 0.2s ease;
+        }
+
+        details.session-accordion[open] summary::after {
+            transform: rotate(180deg);
         }
 
         nav#session-list {
-            /* column-count: 3; */
-            /* row-gap: 4px; */
             display: flex;
             flex-direction: column;
-            gap: 4px;
+            gap: 0.4rem;
+            max-height: 55vh;
+            overflow-y: auto;
+            padding-right: 4px;
+        }
+
+        nav#session-list::-webkit-scrollbar {
+            width: 5px;
+        }
+        nav#session-list::-webkit-scrollbar-thumb {
+            background: var(--border-ice);
+            border-radius: 3px;
         }
 
         nav#session-list a {
             display: flex;
-            gap: 1rem;
-            width: 250px;
-            /* padding: 0.2rem 0.5rem; */
-            background: #11354b;
-            color: white;
-            /* font-weight: bold; */
-            font-size: 0.9rem;
-            height: 1.5rem;
-            border-radius: var(--session-list-item-border-radius);
-        }
-        
-        nav#session-list a span {
-            display: flex;
             align-items: center;
-            height: 100%;
+            gap: 0.6rem;
+            background: var(--bg-panel);
+            border: 1px solid rgba(44, 74, 107, 0.7);
+            color: var(--text-parchment);
+            text-decoration: none;
+            font-size: 0.85rem;
+            min-height: 2rem;
+            border-radius: var(--radius);
             overflow: hidden;
-            text-overflow: ellipsis;
-            text-wrap: nowrap;
-            border-radius: var(--session-list-item-border-radius);
+            transition: all 0.15s ease;
         }
-        
+
+        nav#session-list a:hover,
+        nav#session-list a.active {
+            background: var(--bg-panel-hover);
+            border-color: var(--accent-frost);
+            transform: translateX(2px);
+        }
+
         nav#session-list a span.session {
+            display: flex;
             width: 2rem;
+            height: stretch;
+            align-items: center;
             justify-content: center;
-            background: gold;
-            color: black;
+            background: linear-gradient(135deg, #d8aa4c, #a47926);
+            color: #0b131d;
+            font-weight: 700;
+            font-size: 0.8rem;
+            flex-shrink: 0;
         }
 
         nav#session-list a span.scenario {
             flex-grow: 1;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            font-weight: 500;
         }
-        
+
         nav#session-list a span.outcome {
-            width: 3rem;
+            display: flex;
+            height: stretch;
+            padding: 0 0.5rem;
+            align-items: center;
             justify-content: center;
-            align-self: flex-end;
-            background: red;
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            background: var(--loss-bg);
+            color: var(--loss-text);
+            flex-shrink: 0;
         }
+
         nav#session-list a span.outcome.win {
-            background: blue;
+            background: var(--win-bg);
+            color: var(--win-text);
+        }
+
+        /* Main Content Area */
+        main.content {
+            padding: 2rem;
+            overflow-x: auto;
+        }
+
+        .toolbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.25rem;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .view-title {
+            font-family: 'Cinzel', serif;
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: var(--text-parchment);
+            letter-spacing: 0.05em;
+        }
+
+        .toolbar-actions {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
         }
 
         .session-cycle-buttons {
             display: none;
+            gap: 0.5rem;
         }
+
         .session-cycle-buttons.show {
-            display: block;
+            display: flex;
+        }
+
+        /* Carved Rune Buttons */
+        button.fh-btn {
+            font-family: 'Cinzel', serif;
+            font-size: 0.8rem;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            background: linear-gradient(180deg, #1b314a 0%, #112032 100%);
+            color: var(--text-parchment);
+            border: 1px solid var(--border-ice);
+            padding: 0.55rem 1rem;
+            border-radius: var(--radius);
+            cursor: pointer;
+            transition: all 0.15s ease;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+        }
+
+        button.fh-btn:hover {
+            border-color: var(--accent-gold);
+            color: #fff;
+            background: linear-gradient(180deg, #233f5e 0%, #162940 100%);
+        }
+
+        button.fh-btn:active {
+            transform: translateY(1px);
+        }
+
+        /* Ledger Table */
+        .table-card {
+            background: var(--bg-slate);
+            border: 1px solid var(--border-ice);
+            border-radius: 8px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.55);
+            overflow-x: auto;
+            position: relative;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: center;
+        }
+
+        thead {
+            background: linear-gradient(180deg, #192d44 0%, #122133 100%);
+            border-bottom: 2px solid var(--border-gold);
+        }
+
+        th {
+            font-family: 'Cinzel', serif;
+            font-size: 0.75rem;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--accent-frost);
+            padding: 1rem 0.85rem;
+            cursor: pointer;
+            user-select: none;
+            white-space: nowrap;
+            transition: color 0.15s ease, background 0.15s ease;
+        }
+
+        th:first-child {
+            text-align: left;
+            padding-left: 1.25rem;
+        }
+
+        th:hover {
+            color: #fff;
+            background: rgba(98, 182, 203, 0.08);
+        }
+
+        th.sort-asc::after {
+            content: ' ▲';
+            color: var(--accent-gold);
+        }
+
+        th.sort-desc::after {
+            content: ' ▼';
+            color: var(--accent-gold);
+        }
+
+        tbody tr {
+            border-bottom: 1px solid rgba(44, 74, 107, 0.45);
+            transition: background 0.12s ease;
+        }
+
+        tbody tr:nth-child(even) {
+            background: rgba(255, 255, 255, 0.015);
+        }
+
+        tbody tr:hover {
+            background: rgba(98, 182, 203, 0.08);
+        }
+
+        tbody tr:last-child {
+            border-bottom: none;
+        }
+
+        td {
+            padding: 0.85rem;
+            font-size: 0.92rem;
+            font-variant-numeric: tabular-nums;
+            color: var(--text-parchment);
+        }
+
+        td:first-child {
+            text-align: left;
+            padding-left: 1.25rem;
+            font-weight: 600;
+            color: #fff;
+        }
+
+        /* Gilded Best-Stat Medallion */
+        td span.best {
+            display: inline-block;
+            background: linear-gradient(135deg, rgba(229, 184, 75, 0.25), rgba(164, 121, 38, 0.35));
+            border: 1px solid var(--accent-gold);
+            color: #ffe28a;
+            font-weight: 700;
+            padding: 0.15rem 0.55rem;
+            border-radius: 4px;
+            box-shadow: 0 0 10px rgba(229, 184, 75, 0.2);
+        }
+
+        @media (max-width: 820px) {
+            .app-layout {
+                grid-template-columns: 1fr;
+            }
+            aside.sidebar {
+                border-right: none;
+                border-bottom: 1px solid var(--border-ice);
+            }
         }
     </style>
-    <title>Stathaven</title>
 </head>
 <body>
-    <header>
-        <nav id="named-queries"></nav>
-        <details>
-            <summary>Session Stats</summary>
-            <nav id="session-list"></nav>
-        </details>
-        <button onclick="clearSorts()">Clear Sorts</button>
+    <header class="top-banner">
+        <div class="brand">
+            <!-- Frosthaven-style Ice Crystal / Compass Crest -->
+            <svg class="brand-icon" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M12 1L14.8 8.2L22 11L14.8 13.8L12 21L9.2 13.8L2 11L9.2 8.2L12 1ZM12 5.2L10.5 9.5L6.2 11L10.5 12.5L12 16.8L13.5 12.5L17.8 11L13.5 9.5L12 5.2Z"/>
+            </svg>
+            <h1>Stathaven</h1>
+            <span>Campaign Ledger</span>
+        </div>
+        <button class="fh-btn" onclick="clearSorts()">Clear Sorts</button>
     </header>
 
-    <main>
-        <section>
-            <div class="session-cycle-buttons">
-                <button onclick="nextSession()">Next Session</button>
-                <button onclick="prevSession()">Previous Session</button>
+    <div class="app-layout">
+        <aside class="sidebar">
+            <div>
+                <div class="nav-section-title">Rankings</div>
+                <nav id="named-queries"></nav>
             </div>
-            <div id="result"></div>
-        </section>
-    </main>
+
+            <details class="session-accordion" open>
+                <summary>Campaign</summary>
+                <nav id="session-list"></nav>
+            </details>
+        </aside>
+
+        <main class="content">
+            <div class="toolbar">
+                <h2 id="view-title" class="view-title">Campaign Overview</h2>
+                <div class="toolbar-actions">
+                    <div class="session-cycle-buttons">
+                        <button class="fh-btn" onclick="prevSession()">&#9664; Previous Session</button>
+                        <button class="fh-btn" onclick="nextSession()">Next Session &#9654;</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="table-card">
+                <div id="result"></div>
+            </div>
+        </main>
+    </div>
 
     <script src="/sqlite3.js"></script>
     <script src="/app.js"></script>

@@ -7,7 +7,8 @@
     globalThis.queries = {
         sessionStats:
             `SELECT
-                CONCAT(ch.name, ' (', ch.nickname, ')') AS character,
+                -- CONCAT(ch.name, '(', ch.nickname, ')') AS character,
+                ch.name as character,
                 ss.enemies_killed,
                 ss.damage_done,
                 ss.damage_taken,
@@ -18,9 +19,10 @@
                 ss.items_used
             FROM session_stats ss
             JOIN character ch ON ch.id = ss.character_id`,
-        characterBasicStats:
+        basicCharacterStats:
             `SELECT
-                CONCAT(c.name, ' (', c.nickname, ')') AS character,
+                -- CONCAT(c.name, ' (', c.nickname, ')') AS character,
+                c.name as character,
                 COUNT(ss.session_id) AS sessions_played,
                 -- Totals
                 SUM(ss.enemies_killed) AS total_kills,
@@ -42,6 +44,13 @@
             GROUP BY c.id`
     };
 
+    function formatQueryLabel(key) {
+        return key
+            .replace(/([A-Z])/g, ' $1')
+            .replace(/^./, str => str.toUpperCase())
+            .trim();
+    }
+
     globalThis.cycleSort = function(columnName) {
         const url = new URL(window.location);
         const value = url.searchParams.get(columnName);
@@ -53,13 +62,12 @@
 
         history.pushState(null, '', url);
         runNamedQuery(getQueryNameInUrl());
-    }
+    };
 
     function getSortCssClass(columnName) {
         const url = new URL(window.location);
         const value = url.searchParams.get(columnName);
         switch (value) {
-            case null:   return 'sort-none';
             case 'asc':  return 'sort-asc';
             case 'desc': return 'sort-desc';
             default:     return 'sort-none';
@@ -69,7 +77,7 @@
     function getSortsFromUrl() {
         const url = new URL(window.location);
         const sorts = [];
-        url.searchParams.forEach((value, key, _) => {
+        url.searchParams.forEach((value, key) => {
             if (key !== urlQueryKey) {
                 sorts.push({column: key, order: value});
             }
@@ -92,10 +100,10 @@
         sorts.forEach(s => url.searchParams.delete(s.column));
         history.pushState(null, '', url);
         runNamedQuery(getQueryNameInUrl());
-    }
+    };
 
     function getSessionIdFromQueryName(queryName) {
-        return parseInt(queryName.split('_')[1]);
+        return parseInt(queryName.split('_')[1], 10);
     }
 
     globalThis.nextSession = function() {
@@ -103,11 +111,11 @@
         const sessionCount = runQuery('SELECT count(id) FROM session').rows[0][0];
         let sessionId = getSessionIdFromQueryName(queryName);
         sessionId++;
-        if (sessionId >= sessionCount) {
+        if (sessionId > sessionCount) {
             sessionId = 1;
         }
         runNamedQuery(sessionStatsQueryName + '_' + sessionId);
-    }
+    };
 
     globalThis.prevSession = function() {
         const queryName = getQueryNameInUrl();
@@ -118,11 +126,11 @@
             sessionId = sessionCount;
         }
         runNamedQuery(sessionStatsQueryName + '_' + sessionId);
-    }
+    };
 
     function getQueryNameInUrl() {
         const url = new URL(window.location);
-        return url.searchParams.get(urlQueryKey);
+        return url.searchParams.get(urlQueryKey) || Object.keys(globalThis.queries)[0];
     }
 
     function runQuery(sql) {
@@ -137,6 +145,27 @@
             }
         });
         return {columnNames, rows};
+    }
+
+    function updateHeaderAndActiveNav(queryName) {
+        const viewTitle = document.getElementById('view-title');
+
+        document.querySelectorAll('aside.sidebar a').forEach(link => {
+            link.classList.toggle('active', link.getAttribute('href') === `?query=${queryName}`);
+        });
+
+        if (queryName.startsWith(sessionStatsQueryName)) {
+            const sessionId = getSessionIdFromQueryName(queryName);
+            const sessionInfo = runQuery(`SELECT scenario_name, win FROM session WHERE id = ${sessionId}`).rows[0];
+            if (sessionInfo) {
+                const outcomeText = sessionInfo[1] == 1 ? 'Victory' : 'Defeat';
+                viewTitle.textContent = `Session #${sessionId}: ${sessionInfo[0]} (${outcomeText})`;
+            } else {
+                viewTitle.textContent = `Session #${sessionId}`;
+            }
+        } else {
+            viewTitle.textContent = formatQueryLabel(queryName);
+        }
     }
 
     function runNamedQuery(queryName) {
@@ -156,6 +185,7 @@
         url.searchParams.set(urlQueryKey, queryName);
         history.pushState(null, '', url);
 
+        updateHeaderAndActiveNav(queryName);
         renderQueryResult(queryName, result.columnNames, result.rows);
     }
 
@@ -168,41 +198,42 @@
             const th = document.createElement('th');
             th.setAttribute('onclick', `cycleSort('${columnName}')`);
             th.textContent = columnName.replaceAll('_', ' ');
-            thead.appendChild(th);
             th.classList.add(getSortCssClass(columnName));
+            thead.appendChild(th);
         });
 
         const tbody = table.createTBody();
         const columnBests = [];
-        for (let col = 0; col < columnNames.length; col++) {
-            const columnValues = rows.map(row => row[col]);
-            const best = columnValues.reduce((prev, cur, idx, arr) => cur > prev ? cur : prev);
-            columnBests.push(best);
+        if (rows.length > 0) {
+            for (let col = 0; col < columnNames.length; col++) {
+                const columnValues = rows.map(row => row[col]);
+                const best = columnValues.reduce((prev, cur) => (cur > prev ? cur : prev));
+                columnBests.push(best);
+            }
         }
 
         rows.forEach(row => {
             const tr = tbody.insertRow();
-            var col = 0;
-            row.forEach(columnValue => {
+            row.forEach((columnValue, col) => {
                 const td = tr.insertCell();
                 const span = document.createElement('span');
                 span.textContent = columnValue;
 
-                if (typeof(columnValue) == "number" && columnValue == columnBests[col]) {
+                if (columnValue > 0 && columnValue === columnBests[col]) {
                     span.classList.add('best');
                 }
 
                 td.appendChild(span);
-                col++;
             });
         });
-        
+
         container.replaceChildren(table);
 
+        const cycleButtons = document.querySelector('.session-cycle-buttons');
         if (queryName.startsWith(sessionStatsQueryName)) {
-            document.querySelector('.session-cycle-buttons').classList.add('show');
+            cycleButtons.classList.add('show');
         } else {
-            document.querySelector('.session-cycle-buttons').classList.delete('show');
+            cycleButtons.classList.remove('show');
         }
     }
 
@@ -212,7 +243,7 @@
             if (queryName.startsWith(sessionStatsQueryName))
                 return;
             const hyperlink = document.createElement('a');
-            hyperlink.textContent = queryName;
+            hyperlink.textContent = formatQueryLabel(queryName);
             hyperlink.href = `?query=${queryName}`;
             namedQueriesNav.appendChild(hyperlink);
         });
@@ -227,14 +258,18 @@
             const sessionId = row[0];
             const scenario = row[1];
             const win = row[2];
-            const outcome = row[2] == 1 ? 'Win' : 'Loss';
+            const outcome = win == 1 ? 'Win' : 'Loss';
+
             sessionIdNode.classList.add('session');
             sessionIdNode.textContent = sessionId;
+
             scenarioNode.classList.add('scenario');
             scenarioNode.textContent = scenario;
+
             outcomeNode.classList.add('outcome');
             if (win) outcomeNode.classList.add('win');
             outcomeNode.textContent = outcome;
+
             hyperlink.appendChild(sessionIdNode);
             hyperlink.appendChild(scenarioNode);
             hyperlink.appendChild(outcomeNode);
@@ -244,19 +279,13 @@
     }
 
     const stathaven = function(sqlite3) {
-        try {
-            renderNavMenu();
+        renderNavMenu();
 
-            const queryName = getQueryNameInUrl();
-            if (!queryName) {
-                queryName = globalThis.queries.keys()[0];
-            }
-            runNamedQuery(queryName);
-        } finally {
-            // TODO: handle this properly
-            // if (globalThis.db)
-            //     globalThis.db.close();
+        let queryName = getQueryNameInUrl();
+        if (!queryName) {
+            queryName = Object.keys(globalThis.queries)[0];
         }
+        runNamedQuery(queryName);
     };
 
     const load = function(sqlite3) {
