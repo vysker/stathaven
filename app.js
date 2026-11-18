@@ -6,42 +6,14 @@
 
     globalThis.queries = {
         sessionStats:
-            `SELECT
-                -- CONCAT(ch.name, '(', ch.nickname, ')') AS character,
-                ch.name as character,
-                ss.enemies_killed,
-                ss.damage_done,
-                ss.damage_taken,
-                ss.healing_done,
-                ss.loot_collected,
-                ss.chests_looted,
-                ss.ability_xp_earned,
-                ss.items_used
-            FROM session_stats ss
-            JOIN character ch ON ch.id = ss.character_id`,
+            `SELECT character_name, level, trophies, enemies_killed, damage_done, damage_taken, healing_done, loot_collected, chests_looted, ability_xp_earned
+            FROM session_stats_enriched`,
         basicCharacterStats:
-            `SELECT
-                -- CONCAT(c.name, ' (', c.nickname, ')') AS character,
-                c.name as character,
-                COUNT(ss.session_id) AS sessions_played,
-                -- Totals
-                SUM(ss.enemies_killed) AS total_kills,
-                SUM(ss.damage_done) AS total_dmg_done,
-                SUM(ss.damage_taken) AS total_dmg_taken,
-                SUM(ss.healing_done) AS total_healing,
-                SUM(ss.loot_collected) AS total_loot,
-                SUM(ss.chests_looted) AS total_chests,
-                SUM(ss.ability_xp_earned) AS total_xp,
-                SUM(ss.items_used) AS total_items,
-                -- Averages (Rounded to 1 decimal)
-                ROUND(AVG(ss.damage_done), 1) AS avg_dmg_done,
-                ROUND(AVG(ss.ability_xp_earned), 1) AS avg_xp,
-                -- Highest / Lowest (Example using damage_done)
-                MAX(ss.damage_done) AS max_dmg_done,
-                MIN(ss.damage_done) AS min_dmg_done
-            FROM character c
-            JOIN session_stats ss ON c.id = ss.character_id
-            GROUP BY c.id`
+            `SELECT * FROM basic_character_stats`,
+        best_buddies:
+            `SELECT * FROM best_buddies`,
+        medianDamagePerScenario:
+            `SELECT * FROM median_damage_per_scenario`
     };
 
     function formatQueryLabel(key) {
