@@ -44,6 +44,10 @@
             flex-direction: column;
         }
 
+        button {
+            cursor: pointer;
+        }
+
         .top-banner {
             background: linear-gradient(180deg, #132234 0%, #0b1420 100%);
             border-bottom: 2px solid var(--border-ice);
@@ -134,7 +138,7 @@
             gap: 0.4rem;
         }
 
-        nav#named-queries a {
+        nav#named-queries button {
             display: block;
             padding: 0.6rem 0.85rem;
             background: var(--bg-panel);
@@ -147,8 +151,7 @@
             transition: all 0.15s ease;
         }
 
-        nav#named-queries a:hover,
-        nav#named-queries a.active {
+        nav#named-queries button:hover {
             background: var(--bg-panel-hover);
             border-color: var(--accent-frost);
             box-shadow: inset 3px 0 0 var(--accent-frost);
@@ -199,7 +202,7 @@
             border-radius: 3px;
         }
 
-        nav#session-list a {
+        nav#session-list button {
             display: flex;
             align-items: center;
             gap: 0.6rem;
@@ -214,14 +217,13 @@
             transition: all 0.15s ease;
         }
 
-        nav#session-list a:hover,
-        nav#session-list a.active {
+        nav#session-list button:hover {
             background: var(--bg-panel-hover);
             border-color: var(--accent-frost);
             transform: translateX(2px);
         }
 
-        nav#session-list a span.session {
+        nav#session-list button span.session {
             display: flex;
             width: 2rem;
             height: var(--session-list-item-height);
@@ -234,7 +236,7 @@
             flex-shrink: 0;
         }
 
-        nav#session-list a span.scenario {
+        nav#session-list button span.scenario {
             flex-grow: 1;
             white-space: nowrap;
             overflow: hidden;
@@ -242,7 +244,7 @@
             font-weight: 500;
         }
 
-        nav#session-list a span.outcome {
+        nav#session-list button span.outcome {
             display: flex;
             height: var(--session-list-item-height);
             padding: 0 0.5rem;
@@ -256,7 +258,7 @@
             flex-shrink: 0;
         }
 
-        nav#session-list a span.outcome.win {
+        nav#session-list button span.outcome.win {
             background: var(--win-bg);
             color: var(--win-text);
         }
@@ -298,7 +300,7 @@
             display: flex;
         }
 
-        button {
+        button.action-btn {
             font-family: var(--serif);
             font-size: 0.8rem;
             font-weight: 700;
@@ -314,13 +316,13 @@
             box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
         }
 
-        button:hover {
+        button.action-btn:hover {
             border-color: var(--accent-gold);
             color: #fff;
             background: linear-gradient(180deg, #233f5e 0%, #162940 100%);
         }
 
-        button:active {
+        button.action-btn:active {
             transform: translateY(1px);
         }
 
@@ -461,10 +463,10 @@
             <div class="toolbar">
                 <h2 id="view-title" class="view-title">Campaign Overview</h2>
                 <div class="toolbar-actions">
+                    <button class="action-btn" onclick="clearSorts()">Clear Sorts</button>
                     <div class="session-cycle-buttons">
-                        <button onclick="prevSession()">&#9664; Previous Session</button>
-                        <button onclick="nextSession()">Next Session &#9654;</button>
-                        <button onclick="clearSorts()">Clear Sorts</button>
+                        <button class="action-btn" onclick="prevSession()">&#9664; Previous Session</button>
+                        <button class="action-btn" onclick="nextSession()">Next Session &#9654;</button>
                     </div>
                 </div>
             </div>
