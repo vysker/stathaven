@@ -120,16 +120,31 @@
             gap: 1.5rem;
         }
 
-        .nav-section-title {
+        summary.nav-section-title {
             font-family: var(--serif);
             font-size: 0.85rem;
             font-weight: 700;
             color: var(--accent-gold);
             letter-spacing: 0.1em;
             text-transform: uppercase;
-            margin-bottom: 0.75rem;
+            cursor: pointer;
             padding-bottom: 0.35rem;
             border-bottom: 1px solid rgba(200, 157, 70, 0.3);
+            margin-bottom: 0.75rem;
+            list-style: none;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        summary.nav-section-title::after {
+            content: '▾';
+            font-size: 1rem;
+            transition: transform 0.2s ease;
+        }
+
+        details[open] summary::after {
+            transform: rotate(180deg);
         }
 
         nav#named-queries {
@@ -156,33 +171,6 @@
             border-color: var(--accent-frost);
             box-shadow: inset 3px 0 0 var(--accent-frost);
             color: #fff;
-        }
-
-        details.session-accordion summary {
-            font-family: var(--serif);
-            font-size: 0.85rem;
-            font-weight: 700;
-            color: var(--accent-gold);
-            letter-spacing: 0.1em;
-            text-transform: uppercase;
-            cursor: pointer;
-            padding-bottom: 0.35rem;
-            border-bottom: 1px solid rgba(200, 157, 70, 0.3);
-            margin-bottom: 0.75rem;
-            list-style: none;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        details.session-accordion summary::after {
-            content: '▾';
-            font-size: 1rem;
-            transition: transform 0.2s ease;
-        }
-
-        details.session-accordion[open] summary::after {
-            transform: rotate(180deg);
         }
 
         nav#session-list {
@@ -448,13 +436,13 @@
 
     <div class="app-layout">
         <aside class="sidebar">
-            <div>
-                <div class="nav-section-title">Rankings</div>
+            <details class="rankings-accordion" open>
+                <summary class="nav-section-title">Rankings</summary>
                 <nav id="named-queries"></nav>
-            </div>
+            </details>
 
             <details class="session-accordion" open>
-                <summary>Campaign</summary>
+                <summary class="nav-section-title">Campaign</summary>
                 <nav id="session-list"></nav>
             </details>
         </aside>
@@ -465,8 +453,8 @@
                 <div class="toolbar-actions">
                     <button class="action-btn" onclick="clearSorts()">Clear Sorts</button>
                     <div class="session-cycle-buttons">
-                        <button class="action-btn" onclick="prevSession()">&#9664; Previous Session</button>
-                        <button class="action-btn" onclick="nextSession()">Next Session &#9654;</button>
+                        <button class="action-btn" onclick="prevSession()">&#9664; Previous</button>
+                        <button class="action-btn" onclick="nextSession()">Next &#9654;</button>
                     </div>
                 </div>
             </div>

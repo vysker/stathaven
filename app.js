@@ -309,6 +309,11 @@
             hyperlink.setAttribute('onclick', `setSession(${sessionId})`);
             sessionListNav.appendChild(hyperlink);
         });
+
+        if (window.screen.width < 800) {
+            document.querySelector('details.rankings-accordion').removeAttribute('open');
+            document.querySelector('details.session-accordion').removeAttribute('open');
+        }
     }
 
     const stathaven = function() {
