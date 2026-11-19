@@ -1,39 +1,100 @@
 'use strict';
 (function() {
-    const resultContainer = '#result';
-    const urlQueryKey = 'query';
-    const sessionStatsQueryName = 'sessionStats';
+    const RESULT_CONTAINER = '#result';
+    const VIEW_KEY = 'view';
+    const SESSION_KEY = 'sessionId';
 
-    globalThis.queries = {
-        sessionStats:
-            `SELECT character_name, level, trophies, enemies_killed, damage_done, damage_taken, healing_done, loot_collected, chests_looted, ability_xp_earned
-            FROM session_stats_enriched`,
-        basicCharacterStats:
-            `SELECT * FROM basic_character_stats`,
-        best_buddies:
-            `SELECT * FROM best_buddies`,
-        medianDamagePerScenario:
-            `SELECT * FROM median_damage_per_scenario`
-    };
+    // E.g. new Sort('damage_done' -> 'desc')
+    class Sort {
+        constructor(column, direction) {
+            this.column = column;
+            this.direction = direction;
+        }
+    }
+    
+    class State {
+        constructor(view, sorts, sessionId) {
+            this.view = view; // Views.alias
+            this.sorts = sorts; // Array<Sort>
+            this.sessionId = sessionId; // Only relevant when Views.SESSION is active
+        }
+    }
 
-    function formatQueryLabel(key) {
-        return key
-            .replace(/([A-Z])/g, ' $1')
-            .replace(/^./, str => str.toUpperCase())
-            .trim();
+    const Views = Object.freeze({
+        SESSION: {
+            title: 'Scenario',
+            alias: 'scenario',
+            description: 'Detailed scenario stats',
+            sql: `SELECT character_name, level, trophies, enemies_killed, damage_done, damage_taken, healing_done, loot_collected, chests_looted, ability_xp_earned
+                FROM session_stats_enriched`,
+        },
+        CHARACTER_STATS: {
+            title: 'Character',
+            alias: 'character',
+            description: 'Campaign-spanning character stats',
+            sql: 'SELECT * FROM basic_character_stats',
+        },
+        BEST_BUDDIES: {
+            title: 'Best Buddies',
+            alias: 'buddies',
+            description: 'Shows the characters that played together most',
+            sql: 'SELECT * FROM best_buddies',
+        },
+        MEDIAN_DAMAGE: {
+            title: 'Median Damage',
+            alias: 'median_damage',
+            description: 'Character median damage across the whole campaign',
+            sql: 'SELECT * FROM median_damage'
+        },
+    });
+
+    let state = new State(
+        Views.SESSION.alias, // view
+        [],                  // sorts
+        1,                   // sessionId
+    );
+
+    function setState(newState) {
+        state = newState;
+
+        const url = new URL(window.location);
+        url.searchParams.keys().forEach(key => url.searchParams.delete(key));
+
+        state.sorts.forEach(sort => url.searchParams.set(sort.column, sort.direction));
+        if (state.view)      url.searchParams.set(VIEW_KEY, state.view.alias);
+        if (state.sessionId) url.searchParams.set(SESSION_KEY, state.sessionId);
+
+        history.pushState(null, '', url);
+        reflectState();
+    }
+
+    function getViewByAlias(alias) {
+        if (alias) {
+            for (const key in Views) {
+                const view = Views[key];
+                if (view.alias === alias) {
+                    return view;
+                }
+            }
+        }
+        return null;
     }
 
     globalThis.cycleSort = function(columnName) {
-        const url = new URL(window.location);
-        const value = url.searchParams.get(columnName);
-        switch (value) {
-            case null:   url.searchParams.set(columnName, 'asc'); break;
-            case 'asc':  url.searchParams.set(columnName, 'desc'); break;
-            case 'desc': url.searchParams.delete(columnName); break;
+        const sort = state.sorts.findLast(s => s.column === columnName);
+        const direction = sort ? sort.direction : null;
+        let newDirection;
+        switch (direction) {
+            case null:   newDirection = 'asc'; break;
+            case 'asc':  newDirection = 'desc'; break;
+            case 'desc': newDirection = null; break;
         }
 
-        history.pushState(null, '', url);
-        runNamedQuery(getQueryNameInUrl());
+        const sorts = state.sorts.filter(s => s.column !== columnName);
+        if (newDirection) {
+            sorts.push(new Sort(columnName, newDirection));
+        }
+        setState(new State(state.view, sorts, state.sessionId));
     };
 
     function getSortCssClass(columnName) {
@@ -46,68 +107,61 @@
         }
     }
 
-    function getSortsFromUrl() {
+    function parseStateFromUrl() {
         const url = new URL(window.location);
+        const sessionIdInUrl = url.searchParams.get(SESSION_KEY);
+        const viewInUrl = getViewByAlias(url.searchParams.get(VIEW_KEY));
+
+        const view = viewInUrl ? viewInUrl : Views.SESSION;
+        const sessionId = sessionIdInUrl ? parseInt(sessionIdInUrl) : 1;
         const sorts = [];
-        url.searchParams.forEach((value, key) => {
-            if (key !== urlQueryKey) {
-                sorts.push({column: key, order: value});
+
+        url.searchParams.forEach((value, column) => {
+            if (column !== VIEW_KEY && column !== SESSION_KEY) {
+                sorts.push(new Sort(column, value));
             }
         });
-        return sorts;
+
+        return new State(view, sorts, sessionId);
     }
 
-    function createOrderByClauseFromUrl() {
-        const sorts = getSortsFromUrl();
-        let orderByClause = sorts.map(s => `${s.column} ${s.order}`).join(', ');
+    function makeOrderByClause(sorts) {
+        const orderByClause = sorts.map(s => `${s.column} ${s.direction}`).join(', ');
         if (orderByClause.length > 0) {
-            orderByClause = ' ORDER BY ' + orderByClause;
+            return ' ORDER BY ' + orderByClause;
+        } else {
+            return '';
         }
-        return orderByClause;
     }
 
     globalThis.clearSorts = function() {
-        const url = new URL(window.location);
-        const sorts = getSortsFromUrl();
-        sorts.forEach(s => url.searchParams.delete(s.column));
-        history.pushState(null, '', url);
-        runNamedQuery(getQueryNameInUrl());
+        setState(new State(state.view, [], state.sessionId));
     };
 
-    function getSessionIdFromQueryName(queryName) {
-        return parseInt(queryName.split('_')[1], 10);
-    }
-
     globalThis.nextSession = function() {
-        const queryName = getQueryNameInUrl();
         const sessionCount = runQuery('SELECT count(id) FROM session').rows[0][0];
-        let sessionId = getSessionIdFromQueryName(queryName);
+        let sessionId = state.sessionId;
         sessionId++;
         if (sessionId > sessionCount) {
             sessionId = 1;
         }
-        runNamedQuery(sessionStatsQueryName + '_' + sessionId);
+        setState(new State(state.view, state.sorts, sessionId));
     };
 
     globalThis.prevSession = function() {
-        const queryName = getQueryNameInUrl();
         const sessionCount = runQuery('SELECT count(id) FROM session').rows[0][0];
-        let sessionId = getSessionIdFromQueryName(queryName);
+        let sessionId = state.sessionId;
         sessionId--;
         if (sessionId <= 0) {
             sessionId = sessionCount;
         }
-        runNamedQuery(sessionStatsQueryName + '_' + sessionId);
+        setState(new State(state.view, state.sorts, sessionId));
     };
-
-    function getQueryNameInUrl() {
-        const url = new URL(window.location);
-        return url.searchParams.get(urlQueryKey) || Object.keys(globalThis.queries)[0];
-    }
 
     function runQuery(sql) {
         const columnNames = [];
         const rows = [];
+        console.log(state, sql);
         globalThis.db.exec({
             sql: sql,
             columnNames: columnNames,
@@ -119,15 +173,16 @@
         return {columnNames, rows};
     }
 
-    function updateHeaderAndActiveNav(queryName) {
+    function updateHeaderAndActiveNav() {
         const viewTitle = document.getElementById('view-title');
 
         document.querySelectorAll('aside.sidebar a').forEach(link => {
-            link.classList.toggle('active', link.getAttribute('href') === `?query=${queryName}`);
+            const isActive = link.getAttribute('href').includes(`?sessionId=${state.sessionId}`);
+            link.classList.toggle('active', isActive);
         });
 
-        if (queryName.startsWith(sessionStatsQueryName)) {
-            const sessionId = getSessionIdFromQueryName(queryName);
+        if (state.view === Views.SESSION) {
+            const sessionId = state.sessionId;
             const sessionInfo = runQuery(`SELECT scenario_name, win FROM session WHERE id = ${sessionId}`).rows[0];
             if (sessionInfo) {
                 const outcomeText = sessionInfo[1] == 1 ? 'Victory' : 'Defeat';
@@ -136,33 +191,24 @@
                 viewTitle.textContent = `Session #${sessionId}`;
             }
         } else {
-            viewTitle.textContent = formatQueryLabel(queryName);
+            viewTitle.textContent = state.view.title;
         }
     }
 
-    function runNamedQuery(queryName) {
-        let sql;
-        if (queryName.startsWith(sessionStatsQueryName)) {
-            const sessionId = getSessionIdFromQueryName(queryName);
-            const whereClause = ' WHERE session_id = ' + sessionId;
-            sql = globalThis.queries[sessionStatsQueryName] + whereClause;
-        } else {
-            sql = globalThis.queries[queryName];
+    function reflectState() {
+        let sql = state.view.sql;
+        if (state.view === Views.SESSION) {
+            sql += ' WHERE session_id = ' + state.sessionId;
         }
-
-        sql = sql + createOrderByClauseFromUrl();
+        sql += makeOrderByClause(state.sorts);
         const result = runQuery(sql);
 
-        const url = new URL(window.location);
-        url.searchParams.set(urlQueryKey, queryName);
-        history.pushState(null, '', url);
-
-        updateHeaderAndActiveNav(queryName);
-        renderQueryResult(queryName, result.columnNames, result.rows);
+        renderQueryResult(result.columnNames, result.rows);
+        updateHeaderAndActiveNav();
     }
 
-    function renderQueryResult(queryName, columnNames, rows) {
-        const container = document.querySelector(resultContainer);
+    function renderQueryResult(columnNames, rows) {
+        const container = document.querySelector(RESULT_CONTAINER);
         const table = document.createElement('table');
 
         const thead = table.createTHead().insertRow();
@@ -202,7 +248,7 @@
         container.replaceChildren(table);
 
         const cycleButtons = document.querySelector('.session-cycle-buttons');
-        if (queryName.startsWith(sessionStatsQueryName)) {
+        if (state.view == Views.SESSION) {
             cycleButtons.classList.add('show');
         } else {
             cycleButtons.classList.remove('show');
@@ -211,14 +257,16 @@
 
     function renderNavMenu() {
         const namedQueriesNav = document.querySelector('nav#named-queries');
-        Object.keys(globalThis.queries).forEach(queryName => {
-            if (queryName.startsWith(sessionStatsQueryName))
-                return;
+        for (const key in Views) {
+            const view = Views[key];
+            if (view === Views.SESSION)
+                continue;
             const hyperlink = document.createElement('a');
-            hyperlink.textContent = formatQueryLabel(queryName);
-            hyperlink.href = `?query=${queryName}`;
+            hyperlink.textContent = view.title;
+            hyperlink.alt = view.description;
+            hyperlink.href = `?${VIEW_KEY}=${view.alias}`;
             namedQueriesNav.appendChild(hyperlink);
-        });
+        }
 
         const sessionListNav = document.querySelector('nav#session-list');
         const result = runQuery('SELECT id, scenario_name, win FROM session');
@@ -245,19 +293,15 @@
             hyperlink.appendChild(sessionIdNode);
             hyperlink.appendChild(scenarioNode);
             hyperlink.appendChild(outcomeNode);
-            hyperlink.href = `?query=${sessionStatsQueryName}_${sessionId}`;
+            hyperlink.href = `?${VIEW_KEY}=${Views.SESSION.alias}&sessionId=${sessionId}`;
             sessionListNav.appendChild(hyperlink);
         });
     }
 
-    const stathaven = function(sqlite3) {
+    const stathaven = function() {
         renderNavMenu();
-
-        let queryName = getQueryNameInUrl();
-        if (!queryName) {
-            queryName = Object.keys(globalThis.queries)[0];
-        }
-        runNamedQuery(queryName);
+        const state = parseStateFromUrl();
+        setState(state);
     };
 
     const load = function(sqlite3) {
@@ -279,7 +323,7 @@
                 db.checkRc(rc);
                 if (db) {
                     globalThis.db = db;
-                    stathaven(sqlite3);
+                    stathaven();
                 } else {
                     throw new Error('Database failed to initialize');
                 }

@@ -6,6 +6,8 @@
     <title>Stathaven — Frosthaven Stats</title>
     <style>
         :root {
+            --serif: 'Georgia', serif;
+            --sans-serif: 'Open Sans', 'Roboto', sans-serif;
             --bg-abyss: #080f18;
             --bg-slate: #101d2c;
             --bg-panel: #152538;
@@ -21,6 +23,7 @@
             --loss-bg: #4a1922;
             --loss-text: #ff8fa3;
             --radius: 6px;
+            --session-list-item-height: 2rem;
         }
 
         * {
@@ -30,7 +33,7 @@
         }
 
         body {
-            font-family: 'Open Sans', 'Roboto', sans-serif;
+            font-family: var(--sans-serif);
             background-color: var(--bg-abyss);
             background-image: 
                 radial-gradient(circle at 15% 15%, rgba(44, 74, 107, 0.25) 0%, transparent 45%),
@@ -98,14 +101,12 @@
             padding-left: 0.75rem;
         }
 
-        /* Layout Wrapper */
         .app-layout {
             display: grid;
             grid-template-columns: 290px 1fr;
             flex: 1;
         }
 
-        /* Sidebar Navigation */
         aside.sidebar {
             background: var(--bg-slate);
             border-right: 1px solid var(--border-ice);
@@ -116,7 +117,7 @@
         }
 
         .nav-section-title {
-            font-family: 'Cinzel', serif;
+            font-family: var(--serif);
             font-size: 0.85rem;
             font-weight: 700;
             color: var(--accent-gold);
@@ -154,9 +155,8 @@
             color: #fff;
         }
 
-        /* Session Chronicles Accordion */
         details.session-accordion summary {
-            font-family: 'Cinzel', serif;
+            font-family: var(--serif);
             font-size: 0.85rem;
             font-weight: 700;
             color: var(--accent-gold);
@@ -208,7 +208,7 @@
             color: var(--text-parchment);
             text-decoration: none;
             font-size: 0.85rem;
-            min-height: 2rem;
+            min-height: var(--session-list-item-height);
             border-radius: var(--radius);
             overflow: hidden;
             transition: all 0.15s ease;
@@ -224,7 +224,7 @@
         nav#session-list a span.session {
             display: flex;
             width: 2rem;
-            height: stretch;
+            height: var(--session-list-item-height);
             align-items: center;
             justify-content: center;
             background: linear-gradient(135deg, #d8aa4c, #a47926);
@@ -244,7 +244,7 @@
 
         nav#session-list a span.outcome {
             display: flex;
-            height: stretch;
+            height: var(--session-list-item-height);
             padding: 0 0.5rem;
             align-items: center;
             justify-content: center;
@@ -261,7 +261,6 @@
             color: var(--win-text);
         }
 
-        /* Main Content Area */
         main.content {
             padding: 2rem;
             overflow-x: auto;
@@ -277,7 +276,7 @@
         }
 
         .view-title {
-            font-family: 'Cinzel', serif;
+            font-family: var(--serif);
             font-size: 1.4rem;
             font-weight: 700;
             color: var(--text-parchment);
@@ -299,9 +298,8 @@
             display: flex;
         }
 
-        /* Carved Rune Buttons */
-        button.fh-btn {
-            font-family: 'Cinzel', serif;
+        button {
+            font-family: var(--serif);
             font-size: 0.8rem;
             font-weight: 700;
             letter-spacing: 0.08em;
@@ -316,17 +314,16 @@
             box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
         }
 
-        button.fh-btn:hover {
+        button:hover {
             border-color: var(--accent-gold);
             color: #fff;
             background: linear-gradient(180deg, #233f5e 0%, #162940 100%);
         }
 
-        button.fh-btn:active {
+        button:active {
             transform: translateY(1px);
         }
 
-        /* Ledger Table */
         .table-card {
             background: var(--bg-slate);
             border: 1px solid var(--border-ice);
@@ -348,7 +345,7 @@
         }
 
         th {
-            font-family: 'Cinzel', serif;
+            font-family: var(--serif);
             font-size: 0.75rem;
             font-weight: 700;
             letter-spacing: 0.08em;
@@ -412,7 +409,7 @@
             color: #fff;
         }
 
-        /* Gilded Best-Stat Medallion */
+        /* Best stat indicator */
         td span.best {
             display: inline-block;
             background: linear-gradient(135deg, rgba(229, 184, 75, 0.25), rgba(164, 121, 38, 0.35));
@@ -443,9 +440,8 @@
                 <path d="M12 1L14.8 8.2L22 11L14.8 13.8L12 21L9.2 13.8L2 11L9.2 8.2L12 1ZM12 5.2L10.5 9.5L6.2 11L10.5 12.5L12 16.8L13.5 12.5L17.8 11L13.5 9.5L12 5.2Z"/>
             </svg>
             <h1>Stathaven</h1>
-            <span>Campaign Ledger</span>
+            <span>Campaign Stats</span>
         </div>
-        <button class="fh-btn" onclick="clearSorts()">Clear Sorts</button>
     </header>
 
     <div class="app-layout">
@@ -466,8 +462,9 @@
                 <h2 id="view-title" class="view-title">Campaign Overview</h2>
                 <div class="toolbar-actions">
                     <div class="session-cycle-buttons">
-                        <button class="fh-btn" onclick="prevSession()">&#9664; Previous Session</button>
-                        <button class="fh-btn" onclick="nextSession()">Next Session &#9654;</button>
+                        <button onclick="prevSession()">&#9664; Previous Session</button>
+                        <button onclick="nextSession()">Next Session &#9654;</button>
+                        <button onclick="clearSorts()">Clear Sorts</button>
                     </div>
                 </div>
             </div>

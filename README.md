@@ -14,4 +14,24 @@ The philosophy here is to have as little moving parts as possible, so the app ca
 
 The data is based on the scenario stats screen you see when you finish a scenario in the digital version of Frosthaven.
 
-This data is entered manually and added as a `.csv` file to `data/`. By running `ingest.py`, the data is included in the `stathaven.db`, which is the sqlite3 database. Characters have to be edited manually in `characters.sql`.
+## Development
+
+Quick start:
+```shell
+python ingest.py
+python -m http.server 8080
+```
+
+Visit `http://localhost:8080/`.
+
+### Project structure
+
+This **data** is entered manually and added as a `.csv` file to `data/`.
+
+By running `ingest.py`, all data will be built into `stathaven.db`, which is the sqlite3 **database**. This is always a **full refresh**.
+
+**Characters** have to be edited manually in `characters.sql`.
+
+**SQL** queries and views live in `schema.sql`.
+
+The **web app** starts in `index.html`, which includes `app.js`.

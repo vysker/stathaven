@@ -123,7 +123,7 @@ SELECT
   ) AS trophies
 FROM ranked;
 
-CREATE VIEW IF NOT EXISTS median_damage_per_scenario AS
+CREATE VIEW IF NOT EXISTS median_damage AS
 WITH ordered_stats AS (
     SELECT 
         character_id,
