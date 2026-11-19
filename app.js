@@ -25,7 +25,17 @@
             title: 'Scenario',
             alias: 'session',
             description: 'Detailed scenario stats',
-            sql: `SELECT character_name, level, trophies, enemies_killed, damage_done, damage_taken, healing_done, loot_collected, chests_looted, ability_xp_earned
+            sql: `SELECT
+                    character_name AS character,
+                    level AS lvl,
+                    trophies,
+                    enemies_killed AS kills,
+                    damage_done AS dmg_done,
+                    damage_taken AS dmg_taken,
+                    healing_done AS healed,
+                    loot_collected AS loot_bags,
+                    chests_looted AS chests,
+                    ability_xp_earned AS card_xp
                 FROM session_stats_enriched`,
         },
         CHARACTER_STATS: {
