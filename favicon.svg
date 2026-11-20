@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="210mm"
+   height="297mm"
+   viewBox="0 0 210 297"
+   version="1.1"
+   id="svg1"
+   sodipodi:docname="favicon.svg"
+   inkscape:version="1.4.2 (f4327f4, 2025-05-13)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview1"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:document-units="mm"
+     inkscape:zoom="1.2611162"
+     inkscape:cx="358.41265"
+     inkscape:cy="485.68086"
+     inkscape:window-width="1310"
+     inkscape:window-height="691"
+     inkscape:window-x="307"
+     inkscape:window-y="1674"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="layer1"
+     showgrid="false" />
+  <defs
+     id="defs1">
+    <filter
+       style="color-interpolation-filters:sRGB;"
+       inkscape:label="Drop Shadow"
+       id="filter25"
+       x="-12.982818"
+       y="-12.982818"
+       width="27.641074"
+       height="27.272653">
+      <feFlood
+         result="flood"
+         in="SourceGraphic"
+         flood-opacity="0.400000"
+         flood-color="rgb(98,182,203)"
+         id="feFlood24" />
+      <feGaussianBlur
+         result="blur"
+         in="SourceGraphic"
+         stdDeviation="121.981422"
+         id="feGaussianBlur24" />
+      <feOffset
+         result="offset"
+         in="blur"
+         dx="15.230769"
+         dy="6.923077"
+         id="feOffset24" />
+      <feComposite
+         result="comp1"
+         operator="in"
+         in="flood"
+         in2="offset"
+         id="feComposite24" />
+      <feComposite
+         result="comp2"
+         operator="atop"
+         in="comp1"
+         in2="comp1"
+         id="feComposite25" />
+    </filter>
+  </defs>
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1">
+    <path
+       sodipodi:type="star"
+       style="fill:#132338;fill-opacity:1;stroke:#7edbf2;stroke-width:2.11666667;stroke-linecap:round;stroke-dasharray:none;stroke-opacity:1"
+       id="path1"
+       inkscape:flatsided="false"
+       sodipodi:sides="4"
+       sodipodi:cx="88.41758"
+       sodipodi:cy="122.24176"
+       sodipodi:r1="15.530937"
+       sodipodi:r2="4.9698997"
+       sodipodi:arg1="0.81241861"
+       sodipodi:arg2="1.5978168"
+       inkscape:rounded="0"
+       inkscape:randomized="0"
+       d="m 99.098899,133.51649 -10.815592,-6.30664 -11.140453,5.71323 6.30664,-10.81559 -5.713233,-11.14046 10.815591,6.30664 11.140453,-5.71323 -6.30664,10.81559 z"
+       transform="rotate(45,88.41758,122.24176)"
+       inkscape:export-filename="favicon128.png"
+       inkscape:export-xdpi="84.25"
+       inkscape:export-ydpi="84.25" />
+  </g>
+</svg>
