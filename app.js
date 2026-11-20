@@ -3,6 +3,8 @@
     const RESULT_CONTAINER = '#result';
     const VIEW_KEY = 'view';
     const SESSION_KEY = 'sessionId';
+    
+    globalThis.characterNameToIconPath = {}; // E.g. 'Boneshaper' -> './assets/boneshaper.png'
 
     // E.g. new Sort('damage_done' -> 'desc')
     class Sort {
@@ -14,7 +16,7 @@
     
     class State {
         constructor(view, sorts, sessionId) {
-            this.view = view; // Views.alias
+            this.view = view; // Views
             this.sorts = sorts; // Array<Sort>
             this.sessionId = sessionId; // Only relevant when Views.SESSION is active
         }
@@ -54,7 +56,7 @@
             title: 'Median Damage',
             alias: 'median_damage',
             description: 'Character median damage across the whole campaign',
-            sql: 'SELECT * FROM median_damage'
+            sql: 'SELECT name AS character, median_damage_done FROM median_damage'
         },
     });
 
@@ -245,26 +247,45 @@
 
         rows.forEach(row => {
             const tr = tbody.insertRow();
-            row.forEach((columnValue, col) => {
+            row.forEach((columnValue, columnIndex) => {
+                const columnName = columnNames[columnIndex];
+
                 const td = tr.insertCell();
+                td.classList.add(columnName);
+
                 const span = document.createElement('span');
                 span.textContent = columnValue;
 
-                if (columnValue > 0 && columnValue === columnBests[col]) {
+                if (columnValue > 0 && columnValue === columnBests[columnIndex]) {
                     span.classList.add('best');
                 }
 
-                td.appendChild(span);
+                let cellContent = span;
+                if (typeof(columnValue) === 'string') {
+                    const iconPath = globalThis.characterNameToIconPath[columnValue];
+                    if (iconPath) {
+                        const div = document.createElement('div');
+                        const img = document.createElement('img');
+                        div.classList.add('character-icon-parent');
+                        img.classList.add('character-icon');
+                        img.src = iconPath;
+                        div.appendChild(img);
+                        div.appendChild(span);
+                        cellContent = div;
+                    }
+                }
+
+                td.appendChild(cellContent);
             });
         });
 
         container.replaceChildren(table);
 
-        const cycleButtons = document.querySelector('.session-cycle-buttons');
+        const cycleButtons = document.querySelectorAll('.session-cycle-button');
         if (state.view == Views.SESSION) {
-            cycleButtons.classList.add('show');
+            cycleButtons.forEach(btn => btn.classList.add('show'));
         } else {
-            cycleButtons.classList.remove('show');
+            cycleButtons.forEach(btn => btn.classList.remove('show'));
         }
     }
 
@@ -317,6 +338,9 @@
     }
 
     const stathaven = function() {
+        const result = runQuery(`SELECT DISTINCT name, icon_path FROM character`);
+        result.rows.forEach(row => globalThis.characterNameToIconPath[row[0]] = './assets/' + row[1]);
+
         renderNavMenu();
         const state = parseStateFromUrl();
         setState(state);

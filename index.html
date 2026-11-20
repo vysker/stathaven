@@ -3,6 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="./favicon.ico">
     <title>Stathaven — Frosthaven Stats</title>
     <style>
         :root {
@@ -180,7 +181,7 @@
             gap: 0.4rem;
             max-height: 55vh;
             overflow-y: auto;
-            padding-right: 4px;
+            padding-right: 0.5rem; /* For scrollbar */
         }
 
         nav#session-list::-webkit-scrollbar {
@@ -271,34 +272,35 @@
             font-weight: 700;
         }
 
-        .toolbar-actions {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-        }
-
-        .session-cycle-buttons {
+        .session-cycle-button {
             display: none;
             gap: 0.5rem;
         }
-
-        .session-cycle-buttons.show {
+        .session-cycle-button.show {
             display: flex;
         }
 
+        .button-group {
+            display: flex;
+            background: var(--border-ice);
+            gap: 1px;
+            border: 1px solid var(--border-ice);
+            border-radius: var(--button-radius);
+        }
+        .button-group button.action-btn {
+            border: 0;
+            border-radius: 0;
+        }
+
         button.action-btn {
-            font-family: var(--serif);
+            font-family: var(--sans-serif);
             font-size: 0.8rem;
             font-weight: 700;
-            letter-spacing: 0.08em;
-            text-transform: uppercase;
             background: linear-gradient(180deg, #1b314a 0%, #112032 100%);
             border: 1px solid var(--border-ice);
-            padding: 0.55rem 1rem;
+            padding: 0.6rem 1rem;
             border-radius: var(--button-radius);
-            cursor: pointer;
             transition: all 0.15s ease;
-            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
         }
 
         button.action-btn:hover {
@@ -386,14 +388,25 @@
             background: var(--bg-panel);
         }
 
+        .character-icon-parent {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            text-align: left;
+        }
+        img.character-icon {
+            width: 32px;
+            height: 32px;
+        }
+
         /* Best stat indicator */
         td span.best {
+            padding: 0.2rem 0.6rem;
             background: linear-gradient(135deg, rgba(229, 184, 75, 0.25), rgba(164, 121, 38, 0.35));
             border: 1px solid var(--accent-gold);
+            border-radius: var(--button-radius);
             color: #ffe28a;
             font-weight: 700;
-            padding: 0.2rem 0.6rem;
-            border-radius: var(--button-radius);
         }
 
         @media (max-width: 800px) {
@@ -441,12 +454,10 @@
         <main class="content">
             <div class="toolbar">
                 <h2 id="view-title" class="view-title">Campaign Overview</h2>
-                <div class="toolbar-actions">
+                <div class="toolbar-actions button-group">
                     <button class="action-btn" onclick="clearSorts()">Clear Sorts</button>
-                    <div class="session-cycle-buttons">
-                        <button class="action-btn" onclick="prevSession()">&#9664; Previous</button>
-                        <button class="action-btn" onclick="nextSession()">Next &#9654;</button>
-                    </div>
+                    <button class="session-cycle-button action-btn" onclick="prevSession()">&#9664; Previous</button>
+                    <button class="session-cycle-button action-btn" onclick="nextSession()">Next &#9654;</button>
                 </div>
             </div>
 

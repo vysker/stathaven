@@ -7,26 +7,27 @@ CREATE TABLE IF NOT EXISTS session(
 );
 
 CREATE TABLE IF NOT EXISTS character(
-  id       INTEGER PRIMARY KEY,
-  name     VARCHAR(20) NOT NULL,
-  nickname VARCHAR(20) NOT NULL,
-  player   VARCHAR(20) NOT NULL
+  id        INTEGER PRIMARY KEY,
+  name      VARCHAR(20) NOT NULL,
+  nickname  VARCHAR(20) NOT NULL,
+  player    VARCHAR(20) NOT NULL,
+  icon_path VARCHAR(40)
 );
 
 CREATE TABLE IF NOT EXISTS session_stats(
-  session_id        TINYINT, -- REFERENCES(id) session
-  character_id      TINYINT, -- REFERENCES(id) session
-  enemies_killed    TINYINT,
-  damage_done       TINYINT,
-  damage_taken      TINYINT,
-  healing_done      TINYINT,
-  loot_collected    TINYINT,
-  chests_looted     TINYINT,
-  ability_xp_earned TINYINT,
-  items_used        TINYINT,
-  start_xp          INTEGER,
-  end_xp            INTEGER,
-  end_level         TINYINT
+  session_id        TINYINT NOT NULL, -- REFERENCES(id) session
+  character_id      TINYINT NOT NULL, -- REFERENCES(id) session
+  enemies_killed    TINYINT NOT NULL,
+  damage_done       TINYINT NOT NULL,
+  damage_taken      TINYINT NOT NULL,
+  healing_done      TINYINT NOT NULL,
+  loot_collected    TINYINT NOT NULL,
+  chests_looted     TINYINT NOT NULL,
+  ability_xp_earned TINYINT NOT NULL,
+  items_used        TINYINT NOT NULL,
+  start_xp          INTEGER NOT NULL,
+  end_xp            INTEGER NOT NULL,
+  end_level         TINYINT NOT NULL
 );
 
 CREATE VIEW IF NOT EXISTS session_stats_enriched AS
@@ -35,6 +36,7 @@ WITH scored AS (
     ss.session_id,
     s.win,
     ch.name AS character_name,
+    ch.icon_path AS character_icon_path,
     ss.end_level,
     ss.enemies_killed,
     ss.damage_done,
@@ -99,6 +101,7 @@ ranked AS (
 )
 SELECT
   session_id,
+  character_icon_path,
   character_name,
   end_level as level,
   enemies_killed,
@@ -112,7 +115,7 @@ SELECT
   NULLIF(
     TRIM(
       CASE WHEN rnk_mvp = 1                   THEN 'MVP, '           ELSE '' END ||
-      CASE WHEN win = 0 AND rnk_scapegoat = 1 THEN 'Scapegoat, '     ELSE '' END ||
+      -- CASE WHEN win = 0 AND rnk_scapegoat = 1 THEN 'Scapegoat, '     ELSE '' END ||
       CASE WHEN rnk_loot_goblin = 1           THEN 'Loot Goblin, '   ELSE '' END ||
       CASE WHEN rnk_greed_is_good = 1         THEN 'Greed is Good, ' ELSE '' END ||
       CASE WHEN rnk_kill_stealer = 1          THEN 'Kill Stealer, '  ELSE '' END ||
