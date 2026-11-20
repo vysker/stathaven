@@ -13,5 +13,5 @@ INSERT INTO character (id, name, nickname, player, icon_path) VALUES
     (9, 'Blinkblade', 'Twink', 'Peter', 'blinkblade.png'),
     (10, 'Trapper', 'Ted Kazinski', 'Peter', 'trapper.png'),
     (11, 'Pain Conduit', 'T Pain', 'Peter', 'pain_conduit.png'),
-    (12, 'Metal Mosaic', 'Drildo', 'Peter', null)
+    (12, 'Metal Mosaic', 'Drildo', 'Peter', 'metal_mosaic.png')
 ;

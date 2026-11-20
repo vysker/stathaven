@@ -30,7 +30,7 @@
             sql: `SELECT
                     character_name AS character,
                     level AS lvl,
-                    trophies,
+                    -- trophies,
                     enemies_killed AS kills,
                     damage_done AS dmg_done,
                     damage_taken AS dmg_taken,
